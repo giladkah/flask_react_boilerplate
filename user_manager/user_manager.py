@@ -20,27 +20,16 @@ api = Api(app)
 mail = Mail(app)
 
 
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-
-    # User email information
     email = db.Column(db.String(255), nullable=False, unique=True)
-    username = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(128), nullable=False)
     confirmed_at = db.Column(db.DateTime())
-
-    # User information
     is_enabled = db.Column(db.Boolean(), nullable=False, default=False)
-    first_name = db.Column(db.String(50), nullable=False, default='')
-    last_name = db.Column(db.String(50), nullable=False, default='')
 
-    def __init__(self, email, username, password, first_name, last_name):
+    def __init__(self, email, password, ):
         self.email = email
-        self.username = username
         self.password = password
-        self.first_name = first_name
-        self.last_name = last_name
 
     def is_active(self):
         return self.is_enabled
@@ -81,10 +70,7 @@ class Register(Resource):
             abort(400, message='email is alread used.')
         else:
             user = User(email=email,
-                        username=data['username'],
                         password=generate_password_hash(password),
-                        first_name=data['firstName'],
-                        last_name=data['lastName']
                         )
             db.session.add(user)
             db.session.commit()
@@ -131,6 +117,7 @@ class Activate(Resource):
         email = decoded['email']
         user = User.query.filter_by(email=email).first()
         user.is_enabled = True
+        user.confirmed_at = datetime.datetime.now()
         db.session.commit()
         # TODO: when on same server redirect to login page
         return {'email': email}
@@ -141,11 +128,10 @@ class StaticEnd(Resource):
         return send_from_directory('static/ui/build/static/js/', path)
 
 
-# api.add_resource(Register, '/api/users/register')
-# api.add_resource(Login, '/api/users/api/login')
-# api.add_resource(Activate, '/api/users/activate')
-# api.add_resource(StaticEnd, '/static/js/<path>')
-
+api.add_resource(Register, '/api/users/register')
+api.add_resource(Login, '/api/users/api/login')
+api.add_resource(Activate, '/api/users/activate')
+api.add_resource(StaticEnd, '/static/js/<path>')
 
 
 @app.route('/register')
