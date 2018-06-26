@@ -4,7 +4,6 @@ import re
 
 import jwt
 from flask import Flask, request, send_from_directory
-from flask_cors import CORS
 from flask_mail import Mail
 from flask_restful import Resource, Api, abort
 from flask_sqlalchemy import SQLAlchemy
@@ -19,7 +18,7 @@ app.config.from_object('config')
 db = SQLAlchemy(app)
 api = Api(app)
 mail = Mail(app)
-cors = CORS(app, resources={r"/users/*": {"origins": "*"}})
+
 
 
 class User(db.Model):
@@ -137,26 +136,24 @@ class Activate(Resource):
         return {'email': email}
 
 
-class Main(Resource):
-    def get(self):
-        return send_from_directory('static/ui/build/', 'index.html')
-
-
 class StaticEnd(Resource):
     def get(self, path):
         return send_from_directory('static/ui/build/static/js/', path)
 
 
-@app.route('/')
+# api.add_resource(Register, '/api/users/register')
+# api.add_resource(Login, '/api/users/api/login')
+# api.add_resource(Activate, '/api/users/activate')
+# api.add_resource(StaticEnd, '/static/js/<path>')
+
+
+
 @app.route('/register')
+@app.route('/login')
+@app.route('/')
 def handle_react():
     return send_from_directory('static/ui/build/', 'index.html')
 
 
-api.add_resource(Register, '/api/users/register')
-api.add_resource(Login, '/api/users/api/login')
-api.add_resource(Activate, '/api/users/activate')
-api.add_resource(StaticEnd, '/static/js/<path>')
-
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
