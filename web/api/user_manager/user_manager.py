@@ -3,16 +3,16 @@ import functools
 import re
 
 import jwt
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from flask_cors import CORS
-from flask_mail import Mail, Message
+from flask_mail import Mail
 from flask_restful import Resource, Api, abort
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import config
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static/ui/build')
 app.config['SQLALCHEMY_DATABASE_URI'] = config.connection_string
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config.from_object('config')
@@ -94,7 +94,7 @@ class Register(Resource):
         encoded = jwt.encode({'email': email, 'exp': exp},
                              app.config['KEY'], algorithm='HS256')
         #
-        # message = 'Please follow this link to activate your account: http://127.0.0.1:5000/users/activate?token={}'.format(
+        # message = 'Please follow this link to activate your account: http://127.0.0.1:5000/api/users/activate?token={}'.format(
         #     encoded.decode('utf-8'))
         # msg = Message(recipients=[email],
         #               body=message,
@@ -137,9 +137,26 @@ class Activate(Resource):
         return {'email': email}
 
 
-api.add_resource(Register, '/users/register')
-api.add_resource(Login, '/users/login')
-api.add_resource(Activate, '/users/activate')
+class Main(Resource):
+    def get(self):
+        return send_from_directory('static/ui/build/', 'index.html')
+
+
+class StaticEnd(Resource):
+    def get(self, path):
+        return send_from_directory('static/ui/build/static/js/', path)
+
+
+@app.route('/')
+@app.route('/register')
+def handle_react():
+    return send_from_directory('static/ui/build/', 'index.html')
+
+
+api.add_resource(Register, '/api/users/register')
+api.add_resource(Login, '/api/users/api/login')
+api.add_resource(Activate, '/api/users/activate')
+api.add_resource(StaticEnd, '/static/js/<path>')
 
 if __name__ == '__main__':
     app.run()
