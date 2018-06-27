@@ -3,8 +3,8 @@ import functools
 import re
 
 import jwt
-from flask import Flask, request, send_from_directory
-from flask_mail import Mail
+from flask import Flask, request, send_from_directory, redirect
+from flask_mail import Mail, Message
 from flask_restful import Resource, Api, abort
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -78,14 +78,14 @@ class Register(Resource):
         exp = datetime.datetime.utcnow() + datetime.timedelta(days=app.config['ACTIVATION_EXPIRE_DAYS'])
         encoded = jwt.encode({'email': email, 'exp': exp},
                              app.config['KEY'], algorithm='HS256')
-        #
-        # message = 'Please follow this link to activate your account: http://127.0.0.1:5000/api/users/activate?token={}'.format(
-        #     encoded.decode('utf-8'))
-        # msg = Message(recipients=[email],
-        #               body=message,
-        #               subject='Activation Code')
-        # mail.send(msg)
-        return {'email': email, 'message': 'adasdadssad'}
+
+        message = 'Please follow this link to activate your account: http://127.0.0.1:5000/api/users/activate?token={}'.format(
+            encoded.decode('utf-8'))
+        msg = Message(recipients=[email],
+                      body=message,
+                      subject='Activation Code')
+        mail.send(msg)
+        return {'email': email}
 
 
 class Login(Resource):
@@ -119,8 +119,7 @@ class Activate(Resource):
         user.is_enabled = True
         user.confirmed_at = datetime.datetime.now()
         db.session.commit()
-        # TODO: when on same server redirect to login page
-        return {'email': email}
+        return redirect("/login", code=302)
 
 
 class StaticEnd(Resource):
