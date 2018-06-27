@@ -61,7 +61,7 @@ class Register(Resource):
         email = data['email']
         password = data['password']
         if not re.match(r'^[A-Za-z0-9.+_-]+@[A-Za-z0-9._-]+\.[a-zA-Z]*$', email):
-            abort(400, message='email is not valid.')
+            abort(400, message='Please enter a valid email')
         if len(password) < 6:
             abort(400, message='password is too short.')
 
@@ -92,17 +92,19 @@ class Login(Resource):
     def post(self):
         data = request.json
         email = data['email']
+        if not re.match(r'^[A-Za-z0-9.+_-]+@[A-Za-z0-9._-]+\.[a-zA-Z]*$', email):
+            abort(400, message='Please enter a valid email')
         password = data['password']
         user = User.query.filter_by(email=email).first()
         if not user:
-            abort(400, message='User is not found.')
+            abort(400, message='Invalid Username/Password')
 
         if not check_password_hash(user.password, password):
             abort(400, message='Password is incorrect.')
         exp = datetime.datetime.utcnow() + datetime.timedelta(hours=app.config['TOKEN_EXPIRE_HOURS'])
         encoded = jwt.encode({'email': email, 'exp': exp},
                              app.config['KEY'], algorithm='HS256')
-        return {'email': email, 'token': encoded.decode('utf-8')}
+        return {'email': email, 'token': encoded.decode('utf-8'), 'is_activated': user.is_enabled}
 
 
 class Activate(Resource):
@@ -128,7 +130,7 @@ class StaticEnd(Resource):
 
 
 api.add_resource(Register, '/api/users/register')
-api.add_resource(Login, '/api/users/api/login')
+api.add_resource(Login, '/api/users/login')
 api.add_resource(Activate, '/api/users/activate')
 api.add_resource(StaticEnd, '/static/js/<path>')
 
